@@ -58,10 +58,10 @@ process.distributeWeights()
 process.loadDataset(loadData, TRAIN_SET_SIZE, BATCH_SIZE)
 process.distributeDataset()
 
-process.pretrain(rank=1, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1)
+process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
 process.evaluate(verbose=0)
 
 for x in range(ITERATIONS):
     process.distributeWeights()
-    process.train(clients_in_round=CLIENTS_PER_ROUND, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=0)
+    process.train(clients_in_round=CLIENTS_PER_ROUND, epochs=EPOCHS, verbose=0)
     process.evaluate(verbose=0)

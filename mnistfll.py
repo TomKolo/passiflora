@@ -31,10 +31,10 @@ def buildModel():
     )
 
 def loadData():
-    train = i2n.convert_from_file('data/mnist/train-images.idx3-ubyte')
-    train_labels = i2n.convert_from_file('data/mnist/train-labels.idx1-ubyte')
-    test = i2n.convert_from_file('data/mnist/t10k-images.idx3-ubyte')
-    test_labels = i2n.convert_from_file('data/mnist/t10k-labels.idx1-ubyte')
+    train = i2n.convert_from_file('data/mnist/train-images-idx3-ubyte')
+    train_labels = i2n.convert_from_file('data/mnist/train-labels-idx1-ubyte')
+    test = i2n.convert_from_file('data/mnist/t10k-images-idx3-ubyte')
+    test_labels = i2n.convert_from_file('data/mnist/t10k-labels-idx1-ubyte')
     train = train.reshape(train.shape[0], 28, 28, 1).astype('float32')
     test = test.reshape(test.shape[0], 28, 28, 1).astype('float32')
     return np.concatenate((train,test), axis = 0), np.concatenate((train_labels, test_labels), axis = 0)
