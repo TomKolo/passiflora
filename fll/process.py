@@ -16,7 +16,7 @@ class Process(ABC):
         pass
 
     def evaluate(self, verbose):
-        pass
+        return -1
 
     def saveModel(self, *args):
         pass

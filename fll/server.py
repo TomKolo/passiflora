@@ -28,6 +28,7 @@ class Server(Process):
     def evaluate(self, verbose):
         loss, acc = self._model.evaluate(self.__test_x, self.__test_y, verbose=verbose)
         print("Accuracy: " + str(acc) + " loss: " + str(loss))
+        return acc
 
     def loadDataset(self, loadDatasetFunction, train_dataset_size, batch_size=None):
         dataset_x, dataset_y = loadDatasetFunction()
