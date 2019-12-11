@@ -15,7 +15,7 @@ EPOCHS = 1
 ITERATIONS = 10
 CLIENTS_PER_ROUND = 4
 TRAIN_SET_SIZE = 0.8
-LOAD_MODEL = False
+LOAD_MODEL = True
 lossFunction = tf.keras.losses.SparseCategoricalCrossentropy()
 optimizer = tf.keras.optimizers.SGD(learning_rate=LEARNING_RATE_CLIENT)
 
@@ -47,7 +47,7 @@ networkModel = NetworkModel(buildModel, optimizer=optimizer, lossFunction=lossFu
 process.buildNetwork(networkModel)
 
 if LOAD_MODEL == True:
-    process.loadModel(path = './models/mnist/pretrain/model.h5')
+    process.loadModel('./models/mnist/pretrain/model.h5')
 
 process.distributeWeights()
 
@@ -56,7 +56,7 @@ process.distributeDataset()
 
 if LOAD_MODEL == False:
     process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
-    
+
 process.evaluate(verbose=0)
 
 best_acc = 0
