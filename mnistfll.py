@@ -2,19 +2,21 @@
 Implementation of CNN clasifing MNIST dataset. Trainging is done by fll library using federated learning.
 Run it with:
  mpiexec -n NUMBER_OF_CIENTS+1 python3.6 mnistfll.py
+ Params:
+ -i number of iterations 
+ -c number of clients
+ -t training size (between 0 and 100) percentage of dataset used as training set    
 """
 from fll import ProcessBuilder
 from fll import NetworkModel
 import tensorflow as tf
 import idx2numpy as i2n
 import numpy as np
+import sys
 
 LEARNING_RATE_CLIENT = 0.01
 BATCH_SIZE = 10
 EPOCHS = 1
-ITERATIONS = 10
-CLIENTS_PER_ROUND = 4
-TRAIN_SET_SIZE = 0.8
 LOAD_MODEL = True
 lossFunction = tf.keras.losses.SparseCategoricalCrossentropy()
 optimizer = tf.keras.optimizers.SGD(learning_rate=LEARNING_RATE_CLIENT)
@@ -42,6 +44,8 @@ def loadData():
 
 process = ProcessBuilder.buildProcess()
 
+iterations, clients, training_set_size = process.parseArgs(sys.argv)
+
 networkModel = NetworkModel(buildModel, optimizer=optimizer, lossFunction=lossFunction, batchSize=BATCH_SIZE)
 
 process.buildNetwork(networkModel)
@@ -51,7 +55,7 @@ if LOAD_MODEL == True:
 
 process.distributeWeights()
 
-process.loadDataset(loadData, TRAIN_SET_SIZE)
+process.loadDataset(loadData, training_set_size)
 process.distributeDataset()
 
 if LOAD_MODEL == False:
@@ -60,9 +64,9 @@ if LOAD_MODEL == False:
 process.evaluate(verbose=0)
 
 best_acc = 0
-for x in range(ITERATIONS):
+for x in range(iterations):
     process.distributeWeights()
-    process.train(clients_in_round=CLIENTS_PER_ROUND, epochs=EPOCHS, verbose=0)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
     acc = process.evaluate(verbose=0)
     if acc > best_acc:
         process.saveModel('./models/mnist/train/', name="model" + str(x) + ".h5")

@@ -6,10 +6,10 @@ from .processBuilder import ProcessBuilder
 
 try:
     import mpi4py
-    import abc
     import numpy
     import random
     import sklearn
     import tensorflow
+    import getopt
 except Exception as exception:
     print("Missing dependency " + str(exception))

@@ -22,9 +22,6 @@ class Server(Process):
 
         update=None
         update = self._comm.gather(update, root=0)
-        for x in clientsInRound:
-            print(str(x))
-            print(str(type(update[x])))
 
         update = self.__federatedaveraging(update, clientsInRound, clients_in_round)
         self.__applyUpdate(update)
@@ -110,3 +107,9 @@ class Server(Process):
             self._model = tf.keras.models.load_model(path)
         else:
             self._model.load_weights(path)
+
+    def parseArgs(self, argv):
+        iterations, clients, training_set_size = super().parseArgs(argv)
+        if self.__size < clients :
+            raise Exception("Number of clients is smaller than number of clients participation in each iteration")
+        return iterations, clients, training_set_size
