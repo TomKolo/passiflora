@@ -22,6 +22,10 @@ class Server(Process):
 
         update=None
         update = self._comm.gather(update, root=0)
+        for x in clientsInRound:
+            print(str(x))
+            print(str(type(update[x])))
+
         update = self.__federatedaveraging(update, clientsInRound, clients_in_round)
         self.__applyUpdate(update)
 
