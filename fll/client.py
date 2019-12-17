@@ -2,6 +2,9 @@ from . import Process
 import numpy as np
 
 class Client(Process):
+    """
+    
+    """
     def __init__(self, rank, comm):
         super().__init__(rank, comm)
 

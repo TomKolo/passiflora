@@ -1,5 +1,8 @@
 
 class NetworkModel:
+    """
+    Simple class representing a prototype of neural network.
+    """
     def __init__(self, buildModelFunction=None, optimizer=None, lossFunction=None, batchSize=None):
         self.__buildModelFunction = buildModelFunction
         self.__optimizer = optimizer

@@ -69,4 +69,5 @@ for x in range(iterations):
     process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
     acc = process.evaluate(verbose=0)
     if acc > best_acc:
+        best_acc = acc
         process.saveModel('./models/mnist/train/', name="model" + str(x) + ".h5")

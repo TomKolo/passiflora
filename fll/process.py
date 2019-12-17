@@ -2,7 +2,7 @@ import getopt
 
 class Process():
     """
-    Abstract class after which Server and Client class inherit.
+    Class after which Server and Client class inherit.
     """
     def __init__(self, rank, comm):
         self._rank = rank
@@ -16,7 +16,7 @@ class Process():
         iterations = None
         clients = None
         training_set_size = None
-        optlist, args = getopt.getopt(argv[1:], 'i:c:t:', ['iterations=', 'clients=', 'training_set_size='])
+        optlist, _ = getopt.getopt(argv[1:], 'i:c:t:', ['iterations=', 'clients=', 'training_set_size='])
         for currentArgument, currentValue in optlist:
             if currentArgument in ("-i", "--iterations"):
                 iterations = currentValue
@@ -40,7 +40,7 @@ class Process():
     def evaluate(self, verbose):
         return -1
 
-    def saveModel(self, *args):
+    def saveModel(self, dir, name, all):
         pass
 
     def loadModel(self, *args):

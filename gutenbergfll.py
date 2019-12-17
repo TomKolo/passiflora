@@ -1,9 +1,19 @@
+"""
+Implementation of next word prediction. 
+Run it with:
+ mpiexec -n NUMBER_OF_CIENTS+1 python3.6 gutenbergfll.py
+ Params:
+ -i number of iterations 
+ -c number of clients
+ -t training size (between 0 and 100) percentage of dataset used as training set    
+"""
 from fll import ProcessBuilder
 from fll import NetworkModel
 import re
 import glob
 import tensorflow as tf
 import numpy as np
+import sys
 
 DEBUG = True
 SENTENCE_LENGTH=100
@@ -13,9 +23,7 @@ EMBEDING_DIM=256
 NUMBER_OF_RNN=1024
 LEARNING_RATE_CLIENT = 0.01
 EPOCHS = 1
-ITERATIONS = 10
-CLIENTS_PER_ROUND = 4
-TRAIN_SET_SIZE = 0.8
+LOAD_MODEL = False
 optimizer = tf.keras.optimizers.SGD(learning_rate=LEARNING_RATE_CLIENT)
 lossFunction = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
@@ -50,18 +58,32 @@ def buildModel():
     ])
 
 process = ProcessBuilder.buildProcess()
+
+iterations, clients, training_set_size = process.parseArgs(sys.argv)
+
 networkModel = NetworkModel(buildModel, optimizer=optimizer, lossFunction=lossFunction, batchSize=BATCH_SIZE)
 
 process.buildNetwork(networkModel)
+
+if LOAD_MODEL == True:
+     process.loadModel('./models/gutenberg/pretrain/model.h5')
+
 process.distributeWeights()
 
-process.loadDataset(loadData, TRAIN_SET_SIZE, BATCH_SIZE)
+process.loadDataset(loadData, training_set_size, BATCH_SIZE)
 process.distributeDataset()
 
-process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
-process.evaluate(verbose=0)
+if LOAD_MODEL == False:
+    process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
 
-for x in range(ITERATIONS):
+process.evaluate(verbose=0)
+process.saveModel('./models/gutenberg/train/', name="model.h5", all=False)
+
+best_acc = 0
+for x in range(iterations):
     process.distributeWeights()
-    process.train(clients_in_round=CLIENTS_PER_ROUND, epochs=EPOCHS, verbose=0)
-    process.evaluate(verbose=0)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
+    acc = process.evaluate(verbose=0)
+    if acc > best_acc:
+        best_acc = acc
+        process.saveModel('./models/gutenberg/train/', name="model" + str(x) + ".h5", all=False)
