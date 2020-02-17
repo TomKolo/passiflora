@@ -4,7 +4,7 @@ Run it with:
  mpiexec -n NUMBER_OF_CIENTS+1 python3.6 gutenbergfll.py
  Params:
  -i number of iterations 
- -c number of clients
+ -c number of clients participating in each iteration
  -t training size (between 0 and 100) percentage of dataset used as training set    
 """
 from fll import ProcessBuilder
@@ -25,10 +25,10 @@ LEARNING_RATE_CLIENT = 0.01
 EPOCHS = 1
 LOAD_MODEL = False
 optimizer = tf.keras.optimizers.SGD(learning_rate=LEARNING_RATE_CLIENT)
-lossFunction = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 
 
-def loadData():
+def load_data():
     int2char = [chr(x) for x in range(32, 127)]
     char2int = {u: i for i, u in enumerate(int2char)}
     DATA_PATH = "data/gutenberg/"
@@ -50,40 +50,42 @@ def loadData():
     print("There are " + str(len(x_data) ) + " sentences in total!")
     return x_data, y_data
 
-def buildModel():
+def build_model():
     return tf.keras.Sequential([
         tf.keras.layers.Embedding(NUMBER_OF_CHARS, EMBEDING_DIM, batch_input_shape=[BATCH_SIZE, None]),
         tf.keras.layers.GRU(NUMBER_OF_RNN, return_sequences=True, stateful=True, recurrent_initializer='glorot_uniform'),
         tf.keras.layers.Dense(NUMBER_OF_CHARS)
     ])
 
-process = ProcessBuilder.buildProcess()
+process = ProcessBuilder.build_process()
 
-iterations, clients, training_set_size = process.parseArgs(sys.argv)
+iterations, clients, training_set_size = process.parse_args(sys.argv)
 
-networkModel = NetworkModel(buildModel, optimizer=optimizer, lossFunction=lossFunction, batchSize=BATCH_SIZE)
+network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=loss_function, batch_size=BATCH_SIZE)
 
-process.buildNetwork(networkModel)
+process.build_network(network_model)
 
 if LOAD_MODEL == True:
-     process.loadModel('./models/gutenberg/pretrain/model.h5')
+     process.load_model('./models/gutenberg/pretrain/model.h5')
 
-process.distributeWeights()
+process.distribute_weights()
 
-process.loadDataset(loadData, training_set_size, BATCH_SIZE)
-process.distributeDataset()
+process.load_dataset(load_data, training_set_size, BATCH_SIZE)
+process.distribute_dataset()
 
 if LOAD_MODEL == False:
     process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
 
 process.evaluate(verbose=0)
-process.saveModel('./models/gutenberg/train/', name="model.h5", all=False)
+process.save_model('./models/gutenberg/train/', name="model.h5", all=False)
 
-best_acc = 0
+best_loss = 0
 for x in range(iterations):
-    process.distributeWeights()
+    process.distribute_weights()
     process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
-    acc = process.evaluate(verbose=0)
-    if acc > best_acc:
-        best_acc = acc
-        process.saveModel('./models/gutenberg/train/', name="model" + str(x) + ".h5", all=False)
+    _, loss = process.evaluate(verbose=0)
+    if loss < best_loss:
+        best_loss = loss
+        process.save_model('./models/gutenberg/train/', name="model" + str(x) + ".h5", all=False)
+    if DEBUG == True:
+        exec(open("evaluateGutenberg.py -s When -p models/gutenberg/pretrain/model.h5 -n 100").read())

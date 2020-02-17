@@ -3,34 +3,34 @@ class NetworkModel:
     """
     Simple class representing a prototype of neural network.
     """
-    def __init__(self, buildModelFunction=None, optimizer=None, lossFunction=None, batchSize=None):
-        self.__buildModelFunction = buildModelFunction
+    def __init__(self, __build_model_function=None, optimizer=None, loss_function=None, batch_size=None):
+        self.__build_model_function = __build_model_function
         self.__optimizer = optimizer
-        self.__loss = lossFunction
-        self.__batch_size = batchSize
+        self.__loss = loss_function
+        self.__batch_size = batch_size
 
-    def setBuildModelFunction(self, buildModelFunction):
-        self.__buildModelFunction = buildModelFunction
+    def set_build_model_function(self, __build_model_function):
+        self.__build_model_function = __build_model_function
 
-    def setOptimizer(self, optimizer):
+    def set_optimizer(self, optimizer):
         self.__optimizer = optimizer
 
-    def getOptimizer(self):
+    def get_optimizer(self):
         return self.__optimizer
 
-    def setLossFunction(self, lossFunction):
-        self.__loss = lossFunction
+    def set_loss_function(self, loss_function):
+        self.__loss = loss_function
 
-    def getLossFunction(self):
+    def get_loss_function(self):
         return self.__loss
     
-    def setBatchSize(self, batchSize):
-        self.__batch_size = batchSize
+    def set_batch_size(self, batch_size):
+        self.__batch_size = batch_size
 
-    def getBatchSize(self):
+    def get_batch_size(self):
         return self.__batch_size
 
-    def createModel(self):
-        model = self.__buildModelFunction()
+    def create_model(self):
+        model = self.__build_model_function()
         model.compile(loss=self.__loss, optimizer = self.__optimizer, metrics=['accuracy'])
         return model, len(model.layers)

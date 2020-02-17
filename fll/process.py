@@ -8,11 +8,11 @@ class Process():
         self._rank = rank
         self._comm = comm
    
-    def buildNetwork(self, networkModel):
-        self._model, self._numberOfLayers = networkModel.createModel()
-        self._batch_size = networkModel.getBatchSize()
+    def build_network(self, network_model):
+        self._model, self._number_of_layers = network_model.create_model()
+        self._batch_size = network_model.get_batch_size()
 
-    def parseArgs(self, argv):
+    def parse_args(self, argv):
         iterations = None
         clients = None
         training_set_size = None
@@ -34,14 +34,14 @@ class Process():
 
         return int(iterations), int(clients), training_set_size
 
-    def loadDataset(self, *args):
+    def load_dataset(self, *args):
         pass
 
     def evaluate(self, verbose):
         return -1
 
-    def saveModel(self, dir, name, all):
+    def save_model(self, dir, name, all):
         pass
 
-    def loadModel(self, *args):
+    def load_model(self, *args):
         pass

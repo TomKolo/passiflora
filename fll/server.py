@@ -13,26 +13,26 @@ class Server(Process):
     def pretrain(self, rank, epochs, verbose):
         update = None
         update = self._comm.gather(update, root=0)
-        update = self.__federatedaveraging(update, [rank], 1)
-        self.__applyUpdate(update)
+        update = self.__federated_averaging(update, [rank], 1)
+        self.__apply_update(update)
 
     def train(self, clients_in_round, epochs, verbose):
-        clientsInRound = random.sample(range(1, self.__size), clients_in_round)
-        self._comm.bcast(clientsInRound, root=0)
+        selected_clients = random.sample(range(1, self.__size), clients_in_round)
+        self._comm.bcast(selected_clients, root=0)
 
         update=None
         update = self._comm.gather(update, root=0)
 
-        update = self.__federatedaveraging(update, clientsInRound, clients_in_round)
-        self.__applyUpdate(update)
+        update = self.__federated_averaging(update, selected_clients, clients_in_round)
+        self.__apply_update(update)
 
     def evaluate(self, verbose):
         loss, acc = self._model.evaluate(self.__test_x, self.__test_y, verbose=verbose)
         print("Accuracy: " + str(acc) + " loss: " + str(loss))
-        return acc
+        return acc, loss
 
-    def loadDataset(self, loadDatasetFunction, train_dataset_size, batch_size=None):
-        dataset_x, dataset_y = loadDatasetFunction()
+    def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):
+        dataset_x, dataset_y = load_dataset_function()
         dataset_x, dataset_y = shuffle(dataset_x, dataset_y, random_state=0)
         dataset_size = len(dataset_x)
         self.__client_set_size = int(dataset_size*train_dataset_size/(self.__size - 1))
@@ -55,46 +55,46 @@ class Server(Process):
 
         self.__data = list(zip(train_x_divided, train_y_divided))
     
-    def distributeDataset(self):
+    def distribute_dataset(self):
         self._comm.scatter(self.__data, root=0)
         self.__data = None
 
-    def distributeWeights(self):
-        data = self.__getWeights()
+    def distribute_weights(self):
+        data = self.__get_weights()
         self._comm.bcast(data, root=0)
 
-    def __federatedaveraging(self, updates, clients, numberOfClients):
+    def __federated_averaging(self, updates, clients, number_of_clients):
         sumUpdates = {}
         for i, x in enumerate(clients):
-            for y in range(self._numberOfLayers):
+            for y in range(self._number_of_layers):
                 if i == 0:
                     sumUpdates[y] = updates[x][y]
                 else:
                     sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
 
-        for x in range(self._numberOfLayers):
-            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/numberOfClients))
+        for x in range(self._number_of_layers):
+            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/number_of_clients))
 
         return sumUpdates
 
-    def buildNetwork(self, networkModel):
-        return super().buildNetwork(networkModel)
+    def build_network(self, network_model):
+        return super().build_network(network_model)
 
-    def __getWeights(self):
+    def __get_weights(self):
         weights = {}
-        for x in range(self._numberOfLayers):
+        for x in range(self._number_of_layers):
             weights[x] = self._model.get_layer(index=x).get_weights()
 
         return weights
 
-    def __applyUpdate(self, update):
+    def __apply_update(self, update):
         try:
-            for x in range(self._numberOfLayers):
+            for x in range(self._number_of_layers):
                 self._model.get_layer(index=x).set_weights(np.add(update[x],self._model.get_layer(index=x).get_weights()))
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
 
-    def saveModel(self, dir="", name="model.h5", all=False):
+    def save_model(self, dir="", name="model.h5", all=False):
         if all:
             path = dir + name
             self._model.save(path)
@@ -102,14 +102,14 @@ class Server(Process):
             path = dir + name
             self._model.save_weights(path)
 
-    def loadModel(self, path="model.h5", all=False):
+    def load_model(self, path="model.h5", all=False):
         if all:
             self._model = tf.keras.models.load_model(path)
         else:
             self._model.load_weights(path)
 
-    def parseArgs(self, argv):
-        iterations, clients, training_set_size = super().parseArgs(argv)
+    def parse_args(self, argv):
+        iterations, clients, training_set_size = super().parse_args(argv)
         if self.__size < clients :
             raise Exception("Number of clients is smaller than number of clients participation in each iteration")
         return iterations, clients, training_set_size
