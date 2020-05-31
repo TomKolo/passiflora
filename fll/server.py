@@ -119,5 +119,5 @@ class Server(Process):
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
 
-    def _rand_clients(clients_in_round):
+    def _rand_clients(self, clients_in_round):
         return random.sample(range(1, self.__size), clients_in_round)
