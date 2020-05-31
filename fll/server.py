@@ -17,7 +17,7 @@ class Server(Process):
         self.__apply_update(update)
 
     def train(self, clients_in_round, epochs, verbose):
-        selected_clients = random.sample(range(1, self.__size), clients_in_round)
+        selected_clients = self._rand_clients(clients_in_round)
         self._comm.bcast(selected_clients, root=0)
         
         #make it asynchronic waiting only for a portion of clients
@@ -118,3 +118,6 @@ class Server(Process):
                 self._model.get_layer(index=x).set_weights(np.add(update[x],self._model.get_layer(index=x).get_weights()))
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
+
+    def _rand_clients(clients_in_round):
+        return random.sample(range(1, self.__size), clients_in_round)
