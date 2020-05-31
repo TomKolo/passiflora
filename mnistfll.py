@@ -42,7 +42,10 @@ def load_data():
     test = test.reshape(test.shape[0], 28, 28, 1).astype('float32')
     return np.concatenate((train,test), axis = 0), np.concatenate((train_labels, test_labels), axis = 0)
 
-process = ProcessBuilder.build_process()
+def delay_function():
+    return 1.0
+
+process = ProcessBuilder.build_process(delay_function)
 
 iterations, clients, training_set_size = process.parse_args(sys.argv)
 

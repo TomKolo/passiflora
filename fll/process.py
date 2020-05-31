@@ -4,9 +4,10 @@ class Process():
     """
     Class after which Server and Client class inherit.
     """
-    def __init__(self, rank, comm):
+    def __init__(self, rank, comm, delay):
         self._rank = rank
         self._comm = comm
+        self._delay = delay
    
     def build_network(self, network_model):
         self._model, self._number_of_layers = network_model.create_model()
@@ -38,10 +39,13 @@ class Process():
         pass
 
     def evaluate(self, verbose):
-        return -1
+        return 0,0
 
     def save_model(self, dir, name, all):
         pass
 
     def load_model(self, *args):
+        pass
+
+    def set_test_dataset(self, test_dataset_x, test_dataset_y):
         pass

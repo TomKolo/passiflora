@@ -6,9 +6,9 @@ import tensorflow as tf
 
 DEBUG = True
 class Server(Process):
-    def __init__(self, rank, size, comm):
+    def __init__(self, rank, size, comm, delay):
         self.__size = size
-        super().__init__(rank, comm)
+        super().__init__(rank, comm, delay)
 
     def pretrain(self, rank, epochs, verbose):
         update = None
@@ -19,7 +19,8 @@ class Server(Process):
     def train(self, clients_in_round, epochs, verbose):
         selected_clients = random.sample(range(1, self.__size), clients_in_round)
         self._comm.bcast(selected_clients, root=0)
-
+        
+        #make it asynchronic waiting only for a portion of clients
         update=None
         update = self._comm.gather(update, root=0)
 
@@ -63,36 +64,8 @@ class Server(Process):
         data = self.__get_weights()
         self._comm.bcast(data, root=0)
 
-    def __federated_averaging(self, updates, clients, number_of_clients):
-        sumUpdates = {}
-        for i, x in enumerate(clients):
-            for y in range(self._number_of_layers):
-                if i == 0:
-                    sumUpdates[y] = updates[x][y]
-                else:
-                    sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
-
-        for x in range(self._number_of_layers):
-            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/number_of_clients))
-
-        return sumUpdates
-
     def build_network(self, network_model):
         return super().build_network(network_model)
-
-    def __get_weights(self):
-        weights = {}
-        for x in range(self._number_of_layers):
-            weights[x] = self._model.get_layer(index=x).get_weights()
-
-        return weights
-
-    def __apply_update(self, update):
-        try:
-            for x in range(self._number_of_layers):
-                self._model.get_layer(index=x).set_weights(np.add(update[x],self._model.get_layer(index=x).get_weights()))
-        except IndexError as ie:
-            print("Recieved weights dimentions doesn't match model " + str(ie))
 
     def save_model(self, dir="", name="model.h5", all=False):
         if all:
@@ -113,3 +86,35 @@ class Server(Process):
         if self.__size < clients :
             raise Exception("Number of clients is smaller than number of clients participation in each iteration")
         return iterations, clients, training_set_size
+
+    def set_test_dataset(self, test_dataset_x, test_dataset_y):
+        self.__test_x = test_dataset_x
+        self.__test_y = test_dataset_y
+
+    def __federated_averaging(self, updates, clients, number_of_clients):
+        sumUpdates = {}
+        for i, x in enumerate(clients):
+            for y in range(self._number_of_layers):
+                if i == 0:
+                    sumUpdates[y] = updates[x][y]
+                else:
+                    sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
+
+        for x in range(self._number_of_layers):
+            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/number_of_clients))
+
+        return sumUpdates
+
+    def __get_weights(self):
+        weights = {}
+        for x in range(self._number_of_layers):
+            weights[x] = self._model.get_layer(index=x).get_weights()
+
+        return weights
+
+    def __apply_update(self, update):
+        try:
+            for x in range(self._number_of_layers):
+                self._model.get_layer(index=x).set_weights(np.add(update[x],self._model.get_layer(index=x).get_weights()))
+        except IndexError as ie:
+            print("Recieved weights dimentions doesn't match model " + str(ie))

@@ -1,7 +1,7 @@
 """
 Implementation of next word prediction. 
 Run it with:
- mpiexec -n NUMBER_OF_CIENTS+1 python3.6 gutenbergfll.py
+ mpiexec -n 9 python3.6 gutenbergfll.py -i 10 -c 4 -t 80
  Params:
  -i number of iterations 
  -c number of clients participating in each iteration
@@ -57,7 +57,10 @@ def build_model():
         tf.keras.layers.Dense(NUMBER_OF_CHARS)
     ])
 
-process = ProcessBuilder.build_process()
+def delay_function():
+    return 1.0
+
+process = ProcessBuilder.build_process(delay_function)
 
 iterations, clients, training_set_size = process.parse_args(sys.argv)
 

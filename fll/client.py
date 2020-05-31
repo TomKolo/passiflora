@@ -5,8 +5,8 @@ class Client(Process):
     """
     
     """
-    def __init__(self, rank, comm):
-        super().__init__(rank, comm)
+    def __init__(self, rank, comm, delay):
+        super().__init__(rank, comm, delay)
 
     def pretrain(self, rank, epochs, verbose):
         update = None
