@@ -50,6 +50,8 @@ def delay_function():
 
 process = ProcessBuilder.build_process(delay_function)
 
+process.register_process()
+
 iterations, clients, training_set_size = process.parse_args(sys.argv)
 
 network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=loss_function, batch_size=BATCH_SIZE)

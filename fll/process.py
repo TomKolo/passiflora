@@ -4,10 +4,11 @@ class Process():
     """
     Class after which Server and Client class inherit.
     """
-    def __init__(self, rank, comm, delay):
+    def __init__(self, rank, comm, delay, device_name):
         self._rank = rank
         self._comm = comm
         self._delay = delay
+        self._device_name = device_name
    
     def build_network(self, network_model):
         self._model, self._number_of_layers = network_model.create_model()

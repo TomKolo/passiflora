@@ -10,14 +10,15 @@ class ProcessBuilder:
         rank = comm.Get_rank()
         size = comm.Get_size()
         delay = delay_function()
+        device_name = MPI.Get_processor_name()
         if size == 1:
             raise Exception("No clients can be created, there is only one process!")
         
         if rank == 0:
             if DEBUG:
-                print("Creating server of rank " + str(rank) + " in process pool " + str(size))
-            return Server(rank, size, comm, delay)
+                print("Creating server of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
+            return Server(rank, size, comm, delay, device_name)
         else:
             if DEBUG:
-                print("Creating client of rank " + str(rank) + " in process pool " + str(size))
-            return Client(rank, comm, delay)
+                print("Creating client of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
+            return Client(rank, comm, delay, device_name)

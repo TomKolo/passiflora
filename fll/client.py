@@ -5,8 +5,8 @@ class Client(Process):
     """
     
     """
-    def __init__(self, rank, comm, delay):
-        super().__init__(rank, comm, delay)
+    def __init__(self, rank, comm, delay, device_name):
+        super().__init__(rank, comm, delay, device_name)
 
     def pretrain(self, rank, epochs, verbose):
         update = None
@@ -26,12 +26,6 @@ class Client(Process):
 
         self._comm.gather(update, root=0)
 
-    def __calculate_update(self):
-        update = {}
-        for x in range(self._number_of_layers):
-            update[x] = np.subtract(self._model.get_layer(index=x).get_weights(), self.__previous_weights[x])
-        return update
-
     def distribute_dataset(self):
         data = None
         data = self._comm.scatter(data, root=0)
@@ -46,6 +40,10 @@ class Client(Process):
     def build_network(self, network_model):
         return super().build_network(network_model)
 
+    def register_process(self):
+        processes = [self._rank, self._device_name]
+        self._comm.gather(processes, root=0)
+
     def __set_weights(self, weights):
         self.__previous_weights = weights
         try:
@@ -53,3 +51,9 @@ class Client(Process):
                 self._model.get_layer(index=x).set_weights(weights[x])
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
+
+    def __calculate_update(self):
+        update = {}
+        for x in range(self._number_of_layers):
+            update[x] = np.subtract(self._model.get_layer(index=x).get_weights(), self.__previous_weights[x])
+        return update

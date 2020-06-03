@@ -6,9 +6,9 @@ import tensorflow as tf
 
 DEBUG = True
 class Server(Process):
-    def __init__(self, rank, size, comm, delay):
+    def __init__(self, rank, size, comm, delay, device_name):
         self.__size = size
-        super().__init__(rank, comm, delay)
+        super().__init__(rank, comm, delay, device_name)
 
     def pretrain(self, rank, epochs, verbose):
         update = None
@@ -66,6 +66,19 @@ class Server(Process):
 
     def build_network(self, network_model):
         return super().build_network(network_model)
+
+    def register_process(self):
+        processes=None
+        processes = self._comm.gather(processes, root=0)
+        print(processes)
+        self._processes = {}
+        for x in processes[1:]:
+            if x[1] in self._processes:
+                self._processes[x[1]].append(x[0])
+            else:
+                self._processes[x[1]] = [x[0]]
+
+        print(self._processes)
 
     def save_model(self, dir="", name="model.h5", all=False):
         if all:
