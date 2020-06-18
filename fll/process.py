@@ -2,7 +2,8 @@ import getopt
 
 class Process():
     """
-    Class after which Server and Client class inherit.
+    Class after which Server and Client class inherit. Each running MPI 
+    process has on object inheriting from Process (either Client of Server).
     """
     def __init__(self, rank, comm, delay, device_name):
         self._rank = rank

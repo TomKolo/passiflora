@@ -3,11 +3,17 @@ import numpy as np
 import random
 from sklearn.utils import shuffle
 import tensorflow as tf
+import sys
 
 DEBUG = True
 class Server(Process):
+    """
+    Class inheriting from Process, consist of functions performed by server to 
+    cooperate with clients. There can be only one Server and it has to have rank 0.
+    """
     def __init__(self, rank, size, comm, delay, device_name):
         self.__size = size
+        self.__clients_in_round = None
         super().__init__(rank, comm, delay, device_name)
 
     def pretrain(self, rank, epochs, verbose):
@@ -16,15 +22,20 @@ class Server(Process):
         update = self.__federated_averaging(update, [rank], 1)
         self.__apply_update(update)
 
-    def train(self, clients_in_round, epochs, verbose):
-        selected_clients = self._rand_clients(clients_in_round)
-        self._comm.bcast(selected_clients, root=0)
-        
-        #make it asynchronic waiting only for a portion of clients
-        update=None
-        update = self._comm.gather(update, root=0)
+    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration):
+        if self.__clients_in_round != clients_in_round:
+            self.__clients_in_round = clients_in_round
+            self.__allocate()
 
-        update = self.__federated_averaging(update, selected_clients, clients_in_round)
+        selected_clients = self.__rand_clients(clients_in_round)
+        self._comm.bcast(selected_clients, root=0)
+
+        requests = []
+        for x in range(len(selected_clients)):
+            requests.append(self._comm.irecv(self.__buffers[x],source=selected_clients[x], tag=11 + iteration))
+        
+        update = self.__wait_for_clients(requests, drop_rate)
+        update = self.__federated_averaging(update)
         self.__apply_update(update)
 
     def evaluate(self, verbose):
@@ -104,17 +115,27 @@ class Server(Process):
         self.__test_x = test_dataset_x
         self.__test_y = test_dataset_y
 
-    def __federated_averaging(self, updates, clients, number_of_clients):
-        sumUpdates = {}
-        for i, x in enumerate(clients):
+    def is_server(self):
+        return True
+
+    def is_client(self):
+        return False
+
+    def __federated_averaging(self, updates):
+        if DEBUG == True:
+            print("Federated Averaging")
+            print("Size of recieved data " + str(len(updates)))
+
+        sumUpdates = []
+        for x in range(len(updates)):
             for y in range(self._number_of_layers):
-                if i == 0:
-                    sumUpdates[y] = updates[x][y]
+                if x == 0:
+                    sumUpdates.append(updates[x][y])
                 else:
                     sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
 
         for x in range(self._number_of_layers):
-            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/number_of_clients))
+            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/len(updates)))
 
         return sumUpdates
 
@@ -132,5 +153,38 @@ class Server(Process):
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
 
-    def _rand_clients(self, clients_in_round):
+    def __rand_clients(self, clients_in_round):
         return random.sample(range(1, self.__size), clients_in_round)
+
+    def __wait_for_clients(self, requests, drop_rate):
+        request_recieved = 0
+        data = []
+            
+        while request_recieved <= len(requests) * (1.0 - drop_rate):
+            for x in range(len(requests)):
+                request = requests[x].test()
+                if request[0]:
+                    data.append(request[1])
+                    request_recieved = request_recieved + 1
+                    requests.remove(requests[x])
+                    break
+        
+        if DEBUG == True:
+            print("Size of recieved: " + str(request_recieved) + " | size of canceled " + str(len(requests)))
+
+        for x in range(len(requests)):
+            requests[x].Cancel()
+
+        return data
+
+    def __allocate(self):
+        weights = self.__get_weights()
+        sum_space = 0
+        for x in range(len(weights)):
+            for y in range(len(weights[x])):
+                sum_space = sum_space + sys.getsizeof(weights[x][y])
+        sum_space = sum_space + sys.getsizeof(weights)
+
+        self.__buffers = []
+        for x in range(self.__clients_in_round):
+            self.__buffers.append(bytearray(sum_space))

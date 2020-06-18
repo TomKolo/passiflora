@@ -15,23 +15,20 @@ import numpy as np
 import sys
 
 LEARNING_RATE_CLIENT = 0.01
-BATCH_SIZE = 10
-EPOCHS = 1
+BATCH_SIZE = 128
+EPOCHS = 3
 LOAD_MODEL = True
 loss_function = tf.keras.losses.SparseCategoricalCrossentropy()
-optimizer = tf.keras.optimizers.SGD(learning_rate=LEARNING_RATE_CLIENT)
+optimizer = tf.keras.optimizers.Adadelta()
 
 def build_model():
-    initializer = initializer=tf.keras.initializers.GlorotUniform()
     return tf.keras.models.Sequential(
         [
             tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
             tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
             tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Dropout(0.25),
             tf.keras.layers.Flatten(),
             tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dropout(0.5),
             tf.keras.layers.Dense(10, activation='softmax'),
         ]
     )
@@ -72,9 +69,10 @@ if LOAD_MODEL == False:
 process.evaluate(verbose=0)
 
 best_acc = 0
+
 for x in range(iterations):
     process.distribute_weights()
-    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.2, iteration=x)
     acc, _ = process.evaluate(verbose=0)
     if acc > best_acc:
         best_acc = acc

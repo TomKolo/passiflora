@@ -15,7 +15,7 @@ import tensorflow as tf
 import numpy as np
 import sys
 
-DEBUG = False
+DEBUG = True
 SENTENCE_LENGTH=100
 BATCH_SIZE = 64
 NUMBER_OF_CHARS=127-32
@@ -63,6 +63,7 @@ def delay_function():
 process = ProcessBuilder.build_process(delay_function)
 
 process.register_process()
+
 iterations, clients, training_set_size = process.parse_args(sys.argv)
 
 network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=loss_function, batch_size=BATCH_SIZE)
@@ -81,19 +82,18 @@ if LOAD_MODEL == False:
     process.pretrain(rank=1, epochs=EPOCHS, verbose=1)
 
 process.evaluate(verbose=0)
-process.save_model('./models/gutenberg/train/', name="model.h5", all=False)
 
 best_loss = 0
 all_acc = []
 for x in range(iterations):
     process.distribute_weights()
-    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.2, iteration=x)
     acc, loss = process.evaluate(verbose=0)
     all_acc.append(acc)
     if loss < best_loss:
         best_loss = loss
         process.save_model('./models/gutenberg/train/', name="model" + str(x) + ".h5", all=False)
-    if DEBUG == True:
+    if DEBUG == True and process.is_server():
         exec(open("evaluateGutenberg.py -s When -p models/gutenberg/pretrain/model.h5 -n 100").read())
 
 print(all_acc)
