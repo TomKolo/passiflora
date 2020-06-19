@@ -1,5 +1,5 @@
 mpi4py>=3.0.3
 sklearn>=0.0
-tensorflow==2.0.0
+tensorflow==2.0.1
 idx2numpy==1.2.2
 numpy>=1.17.4
