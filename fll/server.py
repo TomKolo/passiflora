@@ -16,10 +16,11 @@ class Server(Process):
         self.__clients_in_round = None
         super().__init__(rank, comm, delay, device_name)
 
-    def pretrain(self, rank, epochs, verbose):
+    def pretrain(self, rank, epochs, verbose, iterations=0):
         update = None
         update = self._comm.gather(update, root=0)
-        update = self.__federated_averaging(update, [rank], 1)
+        update = [x for x in update if x is not None]
+        update = self.__federated_averaging(update)
         self.__apply_update(update)
 
     def train(self, clients_in_round, epochs, verbose, drop_rate, iteration):
@@ -32,7 +33,7 @@ class Server(Process):
 
         requests = []
         for x in range(len(selected_clients)):
-            requests.append(self._comm.irecv(self.__buffers[x],source=selected_clients[x], tag=11 + iteration))
+            requests.append(self._comm.irecv(self.__buffers[x],source=selected_clients[x], tag=11))
         
         update = self.__wait_for_clients(requests, drop_rate)
         update = self.__federated_averaging(update)
@@ -159,8 +160,8 @@ class Server(Process):
     def __wait_for_clients(self, requests, drop_rate):
         request_recieved = 0
         data = []
-            
-        while request_recieved <= len(requests) * (1.0 - drop_rate):
+        size = len(requests)
+        while request_recieved <=  size * (1.0 - drop_rate):
             for x in range(len(requests)):
                 request = requests[x].test()
                 if request[0]:

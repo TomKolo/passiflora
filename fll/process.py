@@ -43,7 +43,7 @@ class Process():
     def evaluate(self, verbose):
         return 0,0
 
-    def save_model(self, dir, name, all):
+    def save_model(self, dir, name, all=False):
         pass
 
     def load_model(self, *args):

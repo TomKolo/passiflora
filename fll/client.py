@@ -4,7 +4,7 @@ import time
 
 class Client(Process):
     """
-    Class inheriting from Process representing clients. There can be 
+    Class inheriting from Process representing client. There can be 
     multiple client processes, each have his own Client object.
     """
     def __init__(self, rank, comm, delay, device_name):
@@ -29,7 +29,7 @@ class Client(Process):
         if self._rank in selected_clients:
             self._model.fit(x=self.__data_x, y=self.__data_y, batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
-            self.__request = self._comm.isend(update, dest=0, tag=11 + iteration)
+            self.__request = self._comm.isend(update, dest=0, tag=11)
 
     def distribute_dataset(self):
         data = None

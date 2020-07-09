@@ -1,5 +1,6 @@
 from .process import Process
 from .client import Client
+from .multiClient import MultiClient
 from .networkModel import NetworkModel
 from .server import Server
 from .processBuilder import ProcessBuilder

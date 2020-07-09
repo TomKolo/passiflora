@@ -1,11 +1,12 @@
 from . import Process
 from . import Server
 from . import Client
+from . import MultiClient
 from mpi4py import MPI
 DEBUG = True
 class ProcessBuilder:
     @staticmethod
-    def build_process(delay_function):
+    def build_process(delay_function, multi_client=False):
         comm = MPI.COMM_WORLD
         rank = comm.Get_rank()
         size = comm.Get_size()
@@ -19,6 +20,11 @@ class ProcessBuilder:
                 print("Creating server of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
             return Server(rank, size, comm, delay, device_name)
         else:
-            if DEBUG:
-                print("Creating client of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
-            return Client(rank, comm, delay, device_name)
+            if multi_client == True:
+                if DEBUG:
+                    print("Creating client of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
+                return MultiClient(rank, comm, delay, device_name)
+            else:
+                if DEBUG:
+                    print("Creating client of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
+                return Client(rank, comm, delay, device_name)
