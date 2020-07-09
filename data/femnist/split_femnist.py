@@ -1,3 +1,4 @@
+import os
 import json
 import numpy as np
 import pickle
@@ -16,8 +17,9 @@ def save_sample(array, file_name):
         img = Image.fromarray(array, 'L')
         img.save(file_name)
 
-num_of_nodes = 8
+num_of_nodes = 4
 clients_per_node = int(34/num_of_nodes)
+delete_raw=True
 
 for x in range(num_of_nodes):
     users = []
@@ -39,7 +41,8 @@ for x in range(num_of_nodes):
                 dictionary['users'] = users
                 dictionary['num_samples'] = num_samples
                 dictionary['user_data'] = user_data
-                pickle.dump(dictionary, open('femnist_' + str(x) + '.pickle', 'wb'))
+                pickle.dump(dictionary, open('divided/femnist_' + str(x) + '.pickle', 'wb'))
                 key = list(dictionary['user_data'].keys())[0]
-                save_sample(dictionary['user_data'][key]['x'][0], "sample_" + str(x) + ".png")
+                save_sample(dictionary['user_data'][key]['x'][0], "raw/sample_" + str(x) + ".png")
                 dictionary = None
+        os.remove('raw/all_data_' + str(x*clients_per_node+y) + '.json')
