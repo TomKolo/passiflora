@@ -49,10 +49,10 @@ class Averager():
         sumWeights = 0
         for x in range(len(data)):
             sumWeights = sumWeights + data[x][1]
-            
-        for x in range(len(updates)):
+
+        for x in range(len(data)):
             for y in range(len(model.layers)):
-                wighted_update = np.multiply(updates[x][y], weights[x]*sumWeights)
+                wighted_update = np.multiply(data[x][0][y], data[x][1]/sumWeights)
                 if x == 0:
                     sumUpdates.append(wighted_update)
                 else:
@@ -72,7 +72,8 @@ class Averager():
 
     def calculate_buffer_size(self, template):
         """
-        Function used to calculate how much space will wieghts update take, needed for asynchronous communication via MPI
+        Function used to calculate how much space will wieghts update take,
+        needed for asynchronous communication via MPI
         """
         template = self.parse_update(template, 0)
         sum_space = 0
@@ -89,5 +90,4 @@ class Averager():
             sum_space = sum_space + sys.getsizeof(template[1])
             sum_space = sum_space + sys.getsizeof(template)
 
-        print("calculated: "+ str(sum_space))
         return sum_space

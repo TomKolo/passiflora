@@ -123,22 +123,12 @@ class Server(Process):
         return False
 
     def __federated_averaging(self, updates):
+        #TODO
         if DEBUG == True:
             print("Federated Averaging")
             print("Size of recieved data " + str(len(updates)))
 
-        sumUpdates = []
-        for x in range(len(updates)):
-            for y in range(self._number_of_layers):
-                if x == 0:
-                    sumUpdates.append(updates[x][y])
-                else:
-                    sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
-
-        for x in range(self._number_of_layers):
-            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/len(updates)))
-
-        return sumUpdates
+        return self._averager.calculate_average(updates, self._model)
 
     def __get_weights(self):
         weights = {}
@@ -180,12 +170,8 @@ class Server(Process):
 
     def __allocate(self):
         weights = self.__get_weights()
-        sum_space = 0
-        for x in range(len(weights)):
-            for y in range(len(weights[x])):
-                sum_space = sum_space + sys.getsizeof(weights[x][y])
-        sum_space = sum_space + sys.getsizeof(weights)
+        space = self._averager.calculate_buffer_size(weights)
 
         self.__buffers = []
-        for x in range(self.__clients_in_round):
-            self.__buffers.append(bytearray(sum_space))
+        for _ in range(self.__clients_in_round):
+            self.__buffers.append(bytearray(space))

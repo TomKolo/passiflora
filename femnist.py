@@ -1,17 +1,16 @@
 """
 Experymenting
 Run it with:
- mpiexec -n NUMBER_OF_CIENTS+1 python3.6 femnist.py -i 3 -c 4 -t 10
+ mpiexec -n NUMBER_OF_CIENTS+1 python3.6 femnist.py -i 3 -c 4 
  Params:
  -i number of iterations 
  -c number of clients participating in each iteration
- -t training size (between 0 and 100) percentage of dataset used as training set    
-
 Provide a pickled dictionary (created by data/femnist/split_femnist.py) to each node using distribute_femnist.py.
 """
 
 from fll import ProcessBuilder
 from fll import NetworkModel
+from fll import Averager
 import tensorflow as tf
 import idx2numpy as i2n
 import numpy as np
@@ -72,7 +71,7 @@ process.register_process()
 
 iterations, clients, training_set_size = process.parse_args(sys.argv)
 
-network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=loss_function, batch_size=BATCH_SIZE)
+network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=loss_function, batch_size=BATCH_SIZE, averager=Averager(Averager.AveragingType.Weighted))
 
 process.build_network(network_model)
 
@@ -96,7 +95,7 @@ process.evaluate(verbose=0)
 best_acc = 0
 for x in range(iterations):
     process.distribute_weights()
-    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.2, iteration=x)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.25, iteration=x)
     acc, _ = process.evaluate(verbose=0)
     if acc > best_acc:
         best_acc = acc

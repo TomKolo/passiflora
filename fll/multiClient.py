@@ -34,6 +34,7 @@ class MultiClient(Process):
         if self._rank in selected_clients:
             self._model.fit(x=self.__data[client][0], y=self.__data[client][1], batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
+            update = self._averager.parse_update(update, len(self.__data[client][0]))
             self.__request = self._comm.isend(update, dest=0, tag=11)
     
     def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):

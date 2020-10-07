@@ -14,6 +14,7 @@ class Process():
     def build_network(self, network_model):
         self._model, self._number_of_layers = network_model.create_model()
         self._batch_size = network_model.get_batch_size()
+        self._averager = network_model.get_averager()
 
     def parse_args(self, argv):
         iterations = None
@@ -33,7 +34,8 @@ class Process():
         if iterations == None:
             raise Exception("Missing argument iterations")
         if training_set_size == None:
-            raise Exception("Missing argument training_set_size")
+            print("Training set size not given, setting it to 100%")
+            training_set_size = 1
 
         return int(iterations), int(clients), training_set_size
 

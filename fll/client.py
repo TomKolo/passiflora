@@ -29,6 +29,7 @@ class Client(Process):
         if self._rank in selected_clients:
             self._model.fit(x=self.__data_x, y=self.__data_y, batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
+            update = self._averager.parse_update(update, len(self.__data_x))
             self.__request = self._comm.isend(update, dest=0, tag=11)
 
     def distribute_dataset(self):
