@@ -9,27 +9,27 @@ Run it with:
 """
 from fll import ProcessBuilder
 from fll import NetworkModel
-import tensorflow as tf
 import idx2numpy as i2n
 import numpy as np
 import sys
+import keras
 
 LEARNING_RATE_CLIENT = 0.01
 BATCH_SIZE = 128
 EPOCHS = 3
 LOAD_MODEL = True
-loss_function = tf.keras.losses.SparseCategoricalCrossentropy()
-optimizer = tf.keras.optimizers.Adadelta()
+loss_function = 'sparse_categorical_crossentropy'
+optimizer = keras.optimizers.Adadelta()
 
 def build_model():
-    return tf.keras.models.Sequential(
+    return keras.models.Sequential(
         [
-            tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
-            tf.keras.layers.Conv2D(64, (3, 3), activation='relu'),
-            tf.keras.layers.MaxPooling2D((2, 2)),
-            tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dense(10, activation='softmax'),
+            keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+            keras.layers.Conv2D(64, (3, 3), activation='relu'),
+            keras.layers.MaxPooling2D((2, 2)),
+            keras.layers.Flatten(),
+            keras.layers.Dense(128, activation='relu'),
+            keras.layers.Dense(10, activation='softmax'),
         ]
     )
 
