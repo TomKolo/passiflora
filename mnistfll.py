@@ -1,7 +1,7 @@
 """
 Implementation of CNN clasifing MNIST dataset. Trainging is done by fll library using federated learning.
 Run it with:
- mpiexec -n NUMBER_OF_CIENTS+1 python3.6 mnistfll.py
+ mpiexec -n NUMBER_OF_CIENTS+1 python3.6 mnistfll.py -i 5 -c 3 -t 80
  Params:
  -i number of iterations 
  -c number of clients participating in each iteration

@@ -1,7 +1,6 @@
 from . import Process
 import numpy as np
 import random
-from sklearn.utils import shuffle
 import tensorflow as tf
 import sys
 
@@ -46,7 +45,8 @@ class Server(Process):
 
     def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):
         dataset_x, dataset_y = load_dataset_function()
-        dataset_x, dataset_y = shuffle(dataset_x, dataset_y, random_state=0)
+        #TODO shuffle somehow
+        #dataset_x, dataset_y = shuffle(dataset_x, dataset_y, random_state=0)
         dataset_size = len(dataset_x)
         self.__client_set_size = int(dataset_size*train_dataset_size/(self.__size - 1))
         self.__test_set_size = int(dataset_size - dataset_size*train_dataset_size)
