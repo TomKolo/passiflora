@@ -94,18 +94,25 @@ class Server(Process):
         print(self._processes)
 
     def save_model(self, dir="", name="model.h5", all=False):
-        if all:
-            path = dir + name
-            self._model.save(path)
-        else:
-            path = dir + name
-            self._model.save_weights(path)
+        try:
+            if all:
+                path = dir + name
+                self._model.save(path)
+            else:
+                path = dir + name
+                self._model.save_weights(path)
+        except ValueError:
+            print("ValueError while saving model, propably caused by too low h5py version.")
+
 
     def load_model(self, path="model.h5", all=False):
-        if all:
-            self._model = keras.models.load_model(path)
-        else:
-            self._model.load_weights(path)
+        try:
+            if all:
+                self._model = keras.models.load_model(path)
+            else:
+                self._model.load_weights(path)
+        except KeyError:
+            print("KeyError while loading model, propably caused by too low h5py version.")
 
     def parse_args(self, argv):
         iterations, clients, training_set_size = super().parse_args(argv)
