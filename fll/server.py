@@ -2,6 +2,7 @@ from . import Process
 import numpy as np
 import random
 import tensorflow as tf
+import keras
 import sys
 
 DEBUG = True
@@ -102,7 +103,7 @@ class Server(Process):
 
     def load_model(self, path="model.h5", all=False):
         if all:
-            self._model = tf.keras.models.load_model(path)
+            self._model = keras.models.load_model(path)
         else:
             self._model.load_weights(path)
 
