@@ -131,7 +131,6 @@ class Server(Process):
         return False
 
     def __federated_averaging(self, updates):
-        #TODO
         if DEBUG == True:
             print("Federated Averaging")
             print("Size of recieved data " + str(len(updates)))
@@ -140,9 +139,8 @@ class Server(Process):
 
     def __get_weights(self):
         weights = {}
-        for x in range(self._number_of_layers):
+        for x in range(self._number_of_layers + 1):
             weights[x] = self._model.get_layer(index=x).get_weights()
-
         return weights
 
     def __apply_update(self, update):

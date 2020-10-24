@@ -37,7 +37,7 @@ class Client(Process):
         data = self._comm.scatter(data, root=0)
         self.__data_x = np.array(data[0])
         self.__data_y = np.array(data[1])
-    
+
     def distribute_weights(self):
         data = None
         data = self._comm.bcast(data, root=0)
@@ -59,7 +59,7 @@ class Client(Process):
     def __set_weights(self, weights):
         self.__previous_weights = weights
         try:
-            for x in range(self._number_of_layers):
+            for x in range(self._number_of_layers + 1):
                 self._model.get_layer(index=x).set_weights(weights[x])
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))

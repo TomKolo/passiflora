@@ -38,7 +38,7 @@ class MultiClient(Process):
             self.__request = self._comm.isend(update, dest=0, tag=11)
     
     def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):
-        self.__data = load_dataset_function()
+        self.__data = load_dataset_function(self._rank)
 
         if DEBUG:
             print("MultiClient of rank " + str(self._rank) + " has loaded dataset with " + str(len(self.__data)) + " clients")
@@ -64,7 +64,7 @@ class MultiClient(Process):
     def __set_weights(self, weights):
         self.__previous_weights = weights
         try:
-            for x in range(self._number_of_layers):
+            for x in range(self._number_of_layers + 1):
                 self._model.get_layer(index=x).set_weights(weights[x])
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
