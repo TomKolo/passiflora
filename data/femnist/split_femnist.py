@@ -1,48 +1,69 @@
 import os
+import sys
 import json
 import numpy as np
 import pickle
-from PIL import Image
+import getopt
 
 """
-Script used to divide raw femnist data into smaller subsets of clients, later distributed to clients.
-Define number of nodes.
+Script dividing raw femnist data into smaller subsets of clients datasets.
+Params:
+-n NUMBER_OF_NODES - number of nodes participating in training
+-p PART - what percentage of original dataset is to be used
 """
 
-def save_sample(array, file_name):
-        array = np.array(array)
-        array = array.reshape(28,28)
-        array = array*255
-        array = np.array(array, dtype=np.int8)
-        img = Image.fromarray(array, 'L')
-        img.save(file_name)
+def load_data(num, part):
+    with open('raw/all_data_' + str(num) + '.json') as json_file:
+        part_data = json.load(json_file)
+        keys = list(part_data['user_data'].keys())
+        keys.sort()
+        data = []
+        for z in range(int((1.0 - part)*len(part_data['users'])), len(part_data['users'])):
+            x = np.array(part_data['user_data'][keys[z]]['x']).reshape(-1,28,28,1)
+            y = np.array(part_data['user_data'][keys[z]]['y'])
+            data.append([x, y])
+    return data
 
-num_of_nodes = 4
-clients_per_node = int(34/num_of_nodes)
-delete_raw=True
+def parse_params(argv):
+    optlist, _ = getopt.getopt(argv[1:], 'n:p:', ['number_of_nodes=', 'part='])
+    for currentArgument, currentValue in optlist:
+        if currentArgument in ("-n", "--number_of_nodes"):
+            number_of_nodes = int(currentValue)
+        elif currentArgument in ("-p", "--part"):
+            part = int(currentValue)/100
 
-for x in range(num_of_nodes):
-    users = []
-    num_samples = []
-    user_data = {}
-    for y in range(0, clients_per_node):
-        with open('raw/all_data_' + str(x*clients_per_node+y) + '.json') as json_file:
-            part_data = json.load(json_file)
-            users.extend(part_data['users'])
-            num_samples.extend(part_data['num_samples'])
-            keys = list(part_data['user_data'].keys())
-            for z in range(len(part_data['users'])):
-                part_data['user_data'][keys[z]]['x'] = np.array(part_data['user_data'][keys[z]]['x']).reshape(part_data['num_samples'][z],28,28,1)
-                part_data['user_data'][keys[z]]['y'] = np.array(part_data['user_data'][keys[z]]['y'])
+    if number_of_nodes == None:
+        raise Exception("Missing argument number_of_nodes")
+    if part == None:
+        raise Exception("Missing argument part")
 
-            user_data.update(part_data['user_data'])
-            if y == clients_per_node - 1:
-                dictionary = {}
-                dictionary['users'] = users
-                dictionary['num_samples'] = num_samples
-                dictionary['user_data'] = user_data
-                pickle.dump(dictionary, open('divided/femnist_' + str(x) + '.pickle', 'wb'))
-                key = list(dictionary['user_data'].keys())[0]
-                save_sample(dictionary['user_data'][key]['x'][0], "raw/sample_" + str(x) + ".png")
-                dictionary = None
-        os.remove('raw/all_data_' + str(x*clients_per_node+y) + '.json')
+    return number_of_nodes, part
+
+num_of_files = 35
+num_of_nodes, part = parse_params(sys.argv)
+node_size = int(3550*part/num_of_nodes)
+last_node = 0
+last_file = 0
+data_placeholder = []
+data = []
+while last_file < num_of_files:
+    if len(data) < node_size:
+        data.extend(load_data(last_file, part))
+        last_file = last_file + 1
+    
+    if len(data_placeholder) + len(data) < node_size:
+        data_placeholder.extend(data)
+        data = []
+    elif len(data_placeholder) + len(data) >= node_size:
+        end =  node_size - len(data_placeholder)
+        data_placeholder.extend(data[0:end])
+        data = data[end: len(data)]
+        print("Saving file no. "  + str(last_node) + " consisting of " + str(len(data_placeholder)) + " client datasets.")
+        pickle.dump(data_placeholder, open('divided/femnist_' + str(last_node) + '.pickle', 'wb'))
+        last_node = last_node + 1
+        data_placeholder = []
+
+if len(data) + len(data_placeholder) != 0:    
+    data_placeholder.extend(data)
+    print("Saving file no. "  + str(last_node) + " consisting of " + str(len(data_placeholder)) + " client datasets.")
+    pickle.dump(data_placeholder, open('divided/femnist_' + str(last_node) + '.pickle', 'wb'))

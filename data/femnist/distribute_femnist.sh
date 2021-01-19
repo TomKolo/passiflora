@@ -1,5 +1,5 @@
 #!/bin/bash
-#Fill username, ips adresses and number of nodes
+#Fill username, ip adresses and number of nodes
 
 ips=(0.0.0.0 0.0.0.0)
 username=username
