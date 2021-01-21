@@ -24,6 +24,7 @@ EPOCHS = 10
 LOAD_MODEL = True
 loss_function = 'sparse_categorical_crossentropy'
 optimizer = keras.optimizers.Adadelta()
+DEBUG=True
 
 def build_model():
 
@@ -38,32 +39,41 @@ def build_model():
         ]
     )
 
-def load_data():
+def load_data(x):
     """
     load_data fucntion must retrun a numpy array of samples and a numpy array of classes they belong to
     If its a multi client case it must return a dict of such pairs.
     """
-    data_dict = pickle.load(open("data/femnist/femnist.pickle", "rb"))
-    data = []
-    for key in data_dict["user_data"]:
-        data.append([data_dict["user_data"][key]['x'], data_dict["user_data"][key]['y']])
+
+    data = pickle.load(open("../data/femnist/divided/femnist_" + str(x - 1) + ".pickle", "rb"))
        
     return data
 
-def load_test_data(training_set_size=1.0):
-    data_dict = pickle.load(open("data/femnist/femnist.pickle", "rb"))
-    test_x = []
-    test_y = []
-    keys = list(data_dict["user_data"].keys())
-    random.shuffle(keys)
-    for x in range(int(len(keys)*training_set_size)):
-        test_x.extend(data_dict["user_data"][keys[x]]['x'])
-        test_y.extend(data_dict["user_data"][keys[x]]['y'])
-
-    return np.array(test_x), np.array(test_y)
-
 def delay_function():
-    return 1.0
+    return 0.0
+
+def load_test_data():
+    """
+    load_data fucntion must retrun a numpy array of samples and a numpy array of classes they belong to
+    If its a multi client case it must return a dict of such pairs.
+    """
+    data = pickle.load(open("../data/femnist/divided/femnist_test.pickle", "rb"))
+    x = []
+    y = []
+    for i in range(len(data)):
+        if DEBUG == True:
+            print(data[i][0].shape)
+            print(data[i][1].shape)
+
+        x.extend(data[i][0])
+        y.extend(data[i][1])
+
+    x = np.array(x)
+    y = np.array(y)
+    if DEBUG == True:
+        print(x.shape)
+        print(y.shape)
+    return x, y
 
 process = ProcessBuilder.build_process(delay_function, multi_client=True)
 
@@ -76,7 +86,7 @@ network_model = NetworkModel(build_model, optimizer=optimizer, loss_function=los
 process.build_network(network_model)
 
 if LOAD_MODEL == True:
-    process.load_model('models/femnist/pretrain/model.h5')
+    process.load_model('../models/femnist/pretrain/model.h5')
 
 process.distribute_weights()
 
@@ -84,11 +94,11 @@ if process.is_client():
     process.load_dataset(load_data, training_set_size)
 
 if process.is_server() == True:
-    test_x, test_y = load_test_data(training_set_size)
+    test_x, test_y = load_test_data()
     process.set_test_dataset(test_x, test_y)
 
 if LOAD_MODEL == False:
-    process.pretrain(rank=1, epochs=EPOCHS, iterations=200, verbose=1)
+    process.pretrain(rank=1, epochs=EPOCHS, iterations=2, verbose=1)
 
 process.evaluate(verbose=0)
 
@@ -99,4 +109,4 @@ for x in range(iterations):
     acc, _ = process.evaluate(verbose=0)
     if acc > best_acc:
         best_acc = acc
-        process.save_model('models/femnist/train/', name="model" + str(x) + ".h5")
+        process.save_model('../models/femnist/train/', name="model" + str(x) + ".h5")
