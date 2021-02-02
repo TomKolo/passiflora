@@ -1,9 +1,9 @@
-from . import Process
+from . import Process, DEBUG
 from . import Server
 from . import Client
 from . import MultiClient
 from mpi4py import MPI
-DEBUG = True
+
 class ProcessBuilder:
     @staticmethod
     def build_process(delay_function, multi_client=False):

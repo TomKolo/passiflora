@@ -1,8 +1,7 @@
-from . import Process
+from . import Process, DEBUG
 import numpy as np
 import time
 from random import randint
-DEBUG = True
 
 class MultiClient(Process):
     """
@@ -20,6 +19,7 @@ class MultiClient(Process):
                 client = randint(0, len(self.__data) - 1)
                 self._model.fit(x=self.__data[client][0], y=np.array(self.__data[client][1]), batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
+            update = self._averager.parse_update(update, len(self.__data[client][0]))
 
         self._comm.gather(update, root=0)
         

@@ -1,4 +1,5 @@
 import getopt
+DEBUG = True
 
 class Process():
     """

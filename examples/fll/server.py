@@ -1,11 +1,10 @@
-from . import Process
+from . import Process, DEBUG
 import numpy as np
 import random
 import tensorflow as tf
 import keras
 import sys
 
-DEBUG = True
 class Server(Process):
     """
     Class inheriting from Process, consist of functions performed by server to 
@@ -157,6 +156,7 @@ class Server(Process):
         request_recieved = 0
         data = []
         size = len(requests)
+        
         while request_recieved <=  size * (1.0 - drop_rate):
             for x in range(len(requests)):
                 request = requests[x].test()

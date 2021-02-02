@@ -1,4 +1,4 @@
-from . import Process
+from . import Process, DEBUG
 import numpy as np
 import time
 
@@ -11,11 +11,13 @@ class Client(Process):
         self.__request = None
         super().__init__(rank, comm, delay, device_name)
 
-    def pretrain(self, rank, epochs, verbose):
+    def pretrain(self, rank, epochs, iterations, verbose):
         update = None
         if rank == self._rank:
-            self._model.fit(x=self.__data_x, y=self.__data_y, batch_size=self._batch_size, epochs=epochs, verbose=verbose)
+            for _ in range(iterations):
+                self._model.fit(x=self.__data_x, y=self.__data_y, batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
+            update = self._averager.parse_update(update, len(self.__data_x))
 
         self._comm.gather(update, root=0)
         
@@ -37,6 +39,21 @@ class Client(Process):
         data = self._comm.scatter(data, root=0)
         self.__data_x = np.array(data[0])
         self.__data_y = np.array(data[1])
+
+        if len(self.__data_x) != len(self.__data_y):
+            raise Exception("Number of examples doesn't match number of labels")
+
+    def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):
+        data = load_dataset_function(self._rank)
+        self.__data_x = data[0]
+        self.__data_y = data[1]
+
+        if len(self.__data_x) != len(self.__data_y):
+            raise Exception("Number of examples doesn't match number of labels")
+        
+        if DEBUG:
+            print("Client of rank " + str(self._rank) + " has loaded dataset with " + str(len(self.__data_x)) + " examples")
+    
 
     def distribute_weights(self):
         data = None
