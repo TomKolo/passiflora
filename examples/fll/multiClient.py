@@ -1,7 +1,7 @@
 from . import Process, DEBUG
 import numpy as np
 import time
-from random import randint
+import random
 
 class MultiClient(Process):
     """
@@ -16,25 +16,31 @@ class MultiClient(Process):
         update = None
         if rank == self._rank:
             for _ in range(iterations):
-                client = randint(0, len(self.__data) - 1)
+                client = random.randint(0, len(self.__data) - 1)
                 self._model.fit(x=self.__data[client][0], y=np.array(self.__data[client][1]), batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
             update = self._averager.parse_update(update, len(self.__data[client][0]))
 
         self._comm.gather(update, root=0)
         
-    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration):
-        selected_clients = self._comm.bcast(clients_in_round, root=0)
+    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration, max_cap=1):
+        selected_processes = self._comm.bcast(clients_in_round, root=0)
 
         if self.__request != None:
             self.__request.Cancel()
             self.__request = None
 
-        client = randint(0, len(self.__data) - 1)
-        if self._rank in selected_clients:
-            self._model.fit(x=self.__data[client][0], y=self.__data[client][1], batch_size=self._batch_size, epochs=epochs, verbose=verbose)
-            update = self.__calculate_update()
-            update = self._averager.parse_update(update, len(self.__data[client][0]))
+        if self._rank in selected_processes.keys():
+            sum_updates = None
+            selected_clients = random.sample(range(0, len(self.__data)), selected_processes[self._rank])
+            for x in range(selected_processes[self._rank]):
+                self._model.fit(x=self.__data[selected_clients[x]][0], y=self.__data[selected_clients[x]][1], batch_size=self._batch_size, epochs=epochs, verbose=verbose)
+                update = self.__calculate_update()
+                update = self._averager.parse_update(update, len(self.__data[selected_clients[x]][0]))
+                sum_updates = self._averager.sum_updates(sum_updates, update)
+                self.__rollback_weights()
+
+            update = sum_updates
             self.__request = self._comm.isend(update, dest=0, tag=11)
     
     def load_dataset(self, load_dataset_function, train_dataset_size, batch_size=None):
@@ -74,3 +80,7 @@ class MultiClient(Process):
         for x in range(self._number_of_layers):
             update[x] = np.subtract(self._model.get_layer(index=x).get_weights(), self.__previous_weights[x])
         return update
+
+    def __rollback_weights(self):
+        for x in range(self._number_of_layers + 1):
+            self._model.get_layer(index=x).set_weights(self.__previous_weights[x])

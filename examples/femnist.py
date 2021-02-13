@@ -20,7 +20,7 @@ import keras
 
 LEARNING_RATE_CLIENT = 0.01
 BATCH_SIZE = 64
-EPOCHS = 10
+EPOCHS = 2
 LOAD_MODEL = False
 loss_function = 'sparse_categorical_crossentropy'
 optimizer = keras.optimizers.Adadelta()
@@ -105,7 +105,7 @@ process.evaluate(verbose=0)
 best_acc = 0
 for x in range(iterations):
     process.distribute_weights()
-    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.25, iteration=x)
+    process.train(clients_in_round=clients, epochs=EPOCHS, verbose=0, drop_rate=0.01, iteration=x, max_cap=2)
     acc, _ = process.evaluate(verbose=0)
     if acc > best_acc:
         best_acc = acc

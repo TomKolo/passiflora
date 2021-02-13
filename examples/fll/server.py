@@ -4,15 +4,17 @@ import random
 import tensorflow as tf
 import keras
 import sys
+from collections import Counter
 
 class Server(Process):
     """
     Class inheriting from Process, consist of functions performed by server to 
     cooperate with clients. There can be only one Server and it has to have rank 0.
     """
-    def __init__(self, rank, size, comm, delay, device_name):
+    def __init__(self, rank, size, comm, delay, device_name, multi_client):
         self.__size = size
         self.__clients_in_round = None
+        self.__multi_client = multi_client
         super().__init__(rank, comm, delay, device_name)
 
     def pretrain(self, rank, epochs, verbose, iterations=0):
@@ -22,17 +24,17 @@ class Server(Process):
         update = self.__federated_averaging(update)
         self.__apply_update(update)
 
-    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration):
+    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration, max_cap=1):
         if self.__clients_in_round != clients_in_round:
             self.__clients_in_round = clients_in_round
             self.__allocate()
 
-        selected_clients = self.__rand_clients(clients_in_round)
-        self._comm.bcast(selected_clients, root=0)
+        selected_processes = self.__rand_clients(clients_in_round, max_cap)
+        self._comm.bcast(selected_processes, root=0)
 
         requests = []
-        for x in range(len(selected_clients)):
-            requests.append(self._comm.irecv(self.__buffers[x],source=selected_clients[x], tag=11))
+        for i, (key, val) in enumerate(selected_processes.items()):
+            requests.append(self._comm.irecv(self.__buffers[i],source=key, tag=11))
         
         update = self.__wait_for_clients(requests, drop_rate)
         update = self.__federated_averaging(update)
@@ -115,8 +117,6 @@ class Server(Process):
 
     def parse_args(self, argv):
         iterations, clients, training_set_size = super().parse_args(argv)
-        if self.__size < clients :
-            raise Exception("Number of clients is smaller than number of clients participation in each iteration")
         return iterations, clients, training_set_size
 
     def set_test_dataset(self, test_dataset_x, test_dataset_y):
@@ -130,11 +130,7 @@ class Server(Process):
         return False
 
     def __federated_averaging(self, updates):
-        if DEBUG == True:
-            print("Federated Averaging")
-            print("Size of recieved data " + str(len(updates)))
-
-        return self._averager.calculate_average(updates, self._model)
+        return self._averager.calculate_average(updates, self._model, self.__multi_client)
 
     def __get_weights(self):
         weights = {}
@@ -149,8 +145,20 @@ class Server(Process):
         except IndexError as ie:
             print("Recieved weights dimentions doesn't match model " + str(ie))
 
-    def __rand_clients(self, clients_in_round):
-        return random.sample(range(1, self.__size), clients_in_round)
+    def __rand_clients(self, clients_in_round, max_cap):
+        if max_cap*(self.__size - 1) < clients_in_round:
+            raise Exception("This setup can't simulate that many clients in a iteration")
+
+        full_population = [x for x in range(1, self.__size) for _ in range(max_cap)]
+        clients = random.sample(full_population, k=clients_in_round)
+        clients = Counter(clients)
+        clients = {key:val for key, val in clients.items() if val != 0}
+
+        if DEBUG == True:
+            print("Selected clients: ")
+            print(clients)
+
+        return clients
 
     def __wait_for_clients(self, requests, drop_rate):
         request_recieved = 0

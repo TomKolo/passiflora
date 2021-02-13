@@ -18,7 +18,7 @@ class ProcessBuilder:
         if rank == 0:
             if DEBUG:
                 print("Creating server of rank " + str(rank) + " in process pool " + str(size) + "processor name (id):" + MPI.Get_processor_name())
-            return Server(rank, size, comm, delay, device_name)
+            return Server(rank, size, comm, delay, device_name, multi_client=multi_client)
         else:
             if multi_client == True:
                 if DEBUG:

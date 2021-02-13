@@ -21,14 +21,15 @@ class Client(Process):
 
         self._comm.gather(update, root=0)
         
-    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration):
-        selected_clients = self._comm.bcast(clients_in_round, root=0)
+    def train(self, clients_in_round, epochs, verbose, drop_rate, iteration, max_cap=1):
+        selected_processes = self._comm.bcast(clients_in_round, root=0)
 
         if self.__request != None:
             self.__request.Cancel()
             self.__request = None
 
-        if self._rank in selected_clients:
+        if self._rank in selected_processes.keys():
+            # debug
             self._model.fit(x=self.__data_x, y=self.__data_y, batch_size=self._batch_size, epochs=epochs, verbose=verbose)
             update = self.__calculate_update()
             update = self._averager.parse_update(update, len(self.__data_x))

@@ -22,37 +22,23 @@ class Averager():
         elif self.__type == self.AveragingType.Performance:
             return update
 
-    def calculate_average(self, updates, model, params=None):
+    def calculate_average(self, updates, model, multi_client, params=None):
         if self.__type == self.AveragingType.Arithmetic:
-            return self.arithmeticAverage(updates, model)
+            return self.__arithmeticAverage(updates, model, multi_client)
         elif self.__type == self.AveragingType.Weighted:
-            return self.weightedAverage(updates, model)
+            return self.__weightedAverage(updates, model, multi_client)
         elif self.__type == self.AveragingType.Performance:
-            return self.performanceAverage(updates, params)
+            return self.__performanceAverage(updates, params)
 
-    def arithmeticAverage(self, updates, model):
-        sumUpdates = []
-        for x in range(len(updates)):
-            for y in range(len(model.layers)):
-                if x == 0:
-                    sumUpdates.append(updates[x][y])
-                else:
-                    sumUpdates[y] = np.add(sumUpdates[y], updates[x][y])
-
-        for x in range(len(model.layers)):
-            sumUpdates[x] = np.multiply(sumUpdates[x],  (1/len(updates)))
-
-        return sumUpdates
-
-    def weightedAverage(self, data, model):
+    def __arithmeticAverage(self, updates, model, multi_client):
         sumUpdates = []
         sumWeights = 0
-        for x in range(len(data)):
-            sumWeights = sumWeights + data[x][1]
+        for x in range(len(updates)):
+            sumWeights = sumWeights + updates[x][1]
 
-        for x in range(len(data)):
+        for x in range(len(updates)):
             for y in range(len(model.layers)):
-                wighted_update = np.multiply(data[x][0][y], data[x][1]/sumWeights)
+                wighted_update = np.multiply(updates[x][0][y], 1.0/sumWeights)
                 if x == 0:
                     sumUpdates.append(wighted_update)
                 else:
@@ -60,15 +46,73 @@ class Averager():
 
         return sumUpdates
 
-    def performanceAverage(self, updates, params):
+    def __weightedAverage(self, updates, model, multi_client):
+        sumUpdates = []
+        sumWeights = 0
+        for x in range(len(updates)):
+            sumWeights = sumWeights + updates[x][1]
+
+        for x in range(len(updates)):
+            for y in range(len(model.layers)):
+                if multi_client == False:
+                    weight = updates[x][1]
+                else:
+                    weight = 1.0
+
+                wighted_update = np.multiply(updates[x][0][y], weight/sumWeights)
+                if x == 0:
+                    sumUpdates.append(wighted_update)
+                else:
+                    sumUpdates[y] = np.add(sumUpdates[y], wighted_update)
+
+        return sumUpdates
+
+    def __performanceAverage(self, updates, params):
         #TODO
         return None
 
     def parse_update(self, update, size):
-        if self.__type == self.AveragingType.Arithmetic or self.AveragingType == self.AveragingType.Performance:
-            return update
-        else: #self.AveragingType == self.AveragingType.Weighted:
+        if self.__type == self.AveragingType.Arithmetic:
+            return [update, 1]
+        elif self.AveragingType == self.AveragingType.Weighted:
             return [update, size]
+        else: 
+            return [update, 1] # placeholder for performance average
+
+    def sum_updates(self, sum, update):
+        if self.__type == self.AveragingType.Arithmetic or self.AveragingType == self.AveragingType.Performance:
+            return self.__sum_arithmetic(sum, update)
+        else:
+            return self.__sum_weighted(sum, update)
+
+    def __sum_arithmetic(self, sum, update):
+        if sum == None:
+            sum = {}
+            for x in range(len(update[0])):
+                sum[x] = update[0][x]
+
+            return [sum, 1]
+        else:
+            for x in range(len(update[0])):
+                sum[0][x] = np.add(sum[0][x], update[0][x])
+            sum[1] = sum[1] + 1
+
+            return sum
+
+
+    def __sum_weighted(self, sum, update):
+        if sum == None:
+            sum = {}
+            for x in range(len(update[0])):
+                sum[x] = np.multiply(update[0][x], update[1])
+
+            return [sum, update[1]]
+        else:
+            for x in range(len(update[0])):
+                sum[0][x] = np.add(sum[0][x], np.multiply(update[0][x], update[1]))
+            sum[1] = sum[1] + update[1]
+
+            return sum
 
     def calculate_buffer_size(self, template):
         """
@@ -78,9 +122,11 @@ class Averager():
         template = self.parse_update(template, 0)
         sum_space = 0
         if self.__type == self.AveragingType.Arithmetic or self.AveragingType == self.AveragingType.Performance:
-            for x in range(len(template)):
-                for y in range(len(template[x])):
-                    sum_space = sum_space + sys.getsizeof(template[x][y])
+            for x in range(len(template[0])):
+                for y in range(len(template[0][x])):
+                    sum_space = sum_space + sys.getsizeof(template[0][x][y])
+            sum_space = sum_space + sys.getsizeof(template[0])
+            sum_space = sum_space + sys.getsizeof(template[1])
             sum_space = sum_space + sys.getsizeof(template)
         elif self.__type == self.AveragingType.Weighted:
             for x in range(len(template[0])):
@@ -91,3 +137,9 @@ class Averager():
             sum_space = sum_space + sys.getsizeof(template)
 
         return sum_space
+
+
+    def __print_update(self, update):
+        print("Printing update")
+        str(update[0][1][0][0][0])
+        return None

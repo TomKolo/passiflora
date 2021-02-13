@@ -11,6 +11,7 @@ Script dividing raw femnist data into smaller subsets of clients datasets.
 Params:
 -p TRAIN_SET - what percentage of original dataset is to be used as training set
 -t TEST_SET - what percentage of original dataset is to be used as test set
+-s SEED - seed for shuffling dataset
 """
 
 def load_data(num, part, test_placeholer, test_part):
@@ -59,7 +60,7 @@ def parse_params(argv):
 
     return train_part, test_part
 
-num_of_files = 1
+num_of_files = 35
 train_part, test_part = parse_params(sys.argv)
 last_node = 0
 last_file = 0
