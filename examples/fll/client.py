@@ -73,7 +73,7 @@ class Client(Process):
 
     def is_client(self):
         return True
-
+        
     def __set_weights(self, weights):
         self.__previous_weights = weights
         try:

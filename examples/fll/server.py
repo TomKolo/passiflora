@@ -13,7 +13,7 @@ class Server(Process):
     """
     def __init__(self, rank, size, comm, delay, device_name, multi_client):
         self.__size = size
-        self.__clients_in_round = None
+        self.__processes_in_round = None
         self.__multi_client = multi_client
         super().__init__(rank, comm, delay, device_name)
 
@@ -25,8 +25,8 @@ class Server(Process):
         self.__apply_update(update)
 
     def train(self, clients_in_round, epochs, verbose, drop_rate, iteration, max_cap=1):
-        if self.__clients_in_round != clients_in_round:
-            self.__clients_in_round = clients_in_round
+        if self.__processes_in_round != min(clients_in_round, self.__size - 1):
+            self.__processes_in_round = min(clients_in_round, self.__size - 1)
             self.__allocate()
 
         selected_processes = self.__rand_clients(clients_in_round, max_cap)
@@ -187,5 +187,5 @@ class Server(Process):
         space = self._averager.calculate_buffer_size(weights)
 
         self.__buffers = []
-        for _ in range(self.__clients_in_round):
+        for _ in range(self.__processes_in_round):
             self.__buffers.append(bytearray(space))

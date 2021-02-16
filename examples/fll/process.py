@@ -40,6 +40,9 @@ class Process():
 
         return int(iterations), int(clients), training_set_size
 
+    def synchronize(self, server_node):
+        self._comm.bcast(None, root=server_node)
+
     def load_dataset(self, *args):
         pass
 

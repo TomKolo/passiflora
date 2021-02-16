@@ -20,7 +20,7 @@ import keras
 
 LEARNING_RATE_CLIENT = 0.01
 BATCH_SIZE = 64
-EPOCHS = 2
+EPOCHS = 10
 LOAD_MODEL = False
 loss_function = 'sparse_categorical_crossentropy'
 optimizer = keras.optimizers.Adadelta()
@@ -110,3 +110,5 @@ for x in range(iterations):
     if acc > best_acc:
         best_acc = acc
         process.save_model('../models/femnist/train/', name="model" + str(x) + ".h5")
+
+process.synchronize(0)
