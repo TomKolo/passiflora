@@ -1,4 +1,4 @@
-# FLL - Federated Learning Library
+# PaSSiFLora - Parallel Scalable Simulation of Federated Learning
 
 ### Simple library created for a sole purpose of evaluating federated approach at training neural networks on distributed datasets. A unique feature that distinguishis it from other libraries designed to evaluate federated learing is possibility of real distribution among avaliable nodes, thanks to MPI.  
 
