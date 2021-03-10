@@ -4,6 +4,7 @@ import random
 import tensorflow as tf
 import keras
 import sys
+import time
 from collections import Counter
 
 class Server(Process):
@@ -25,20 +26,35 @@ class Server(Process):
         self.__apply_update(update)
 
     def train(self, clients_in_round, epochs, verbose, drop_rate, iteration, max_cap=1):
+        stat = {}
         if self.__processes_in_round != min(clients_in_round, self.__size - 1):
             self.__processes_in_round = min(clients_in_round, self.__size - 1)
             self.__allocate()
 
+        self.__start_clock()
         selected_processes = self.__rand_clients(clients_in_round, max_cap)
         self._comm.bcast(selected_processes, root=0)
+        self.__stop_clock(stat, "selection")
 
+        self.__start_clock()
         requests = []
         for i, (key, val) in enumerate(selected_processes.items()):
             requests.append(self._comm.irecv(self.__buffers[i],source=key, tag=11))
-        
+        self.__stop_clock(stat, "broadcast")
+
+        self.__start_clock()
         update = self.__wait_for_clients(requests, drop_rate)
+        self.__stop_clock(stat, "computation")
+
+        self.__start_clock()
         update = self.__federated_averaging(update)
+        self.__stop_clock(stat, "averaging")
+
+        self.__start_clock()
         self.__apply_update(update)
+        self.__stop_clock(stat, "model update")
+
+        self.__print_stat(stat, verbose)
 
     def evaluate(self, verbose):
         loss, acc = self._model.evaluate(self.__test_x, self.__test_y, verbose=verbose)
@@ -189,3 +205,16 @@ class Server(Process):
         self.__buffers = []
         for _ in range(self.__processes_in_round):
             self.__buffers.append(bytearray(space))
+
+    def __start_clock(self):
+        self.__time_start = time.time()
+
+    def __stop_clock(self, stat, attr_name):
+        duration = time.time() - self.__time_start
+        stat[attr_name] = duration
+        return stat
+
+    def __print_stat(self, stats, verbose):
+        if verbose > 0:
+            for k, v in stats.items():
+                print(str(k) + ": " + str(v)) 
