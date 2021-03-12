@@ -33,8 +33,12 @@ class MultiClient(Process):
         if self._rank in selected_processes.keys():
             sum_updates = None
             selected_clients = random.sample(range(0, len(self.__data)), selected_processes[self._rank])
+            
+            if verbose == self._rank:
+                print("MultiClient of rank " + str(self._rank) + " trains on client id: " + str(selected_clients))
+
             for x in range(selected_processes[self._rank]):
-                self._model.fit(x=self.__data[selected_clients[x]][0], y=self.__data[selected_clients[x]][1], batch_size=self._batch_size, epochs=epochs, verbose=verbose)
+                self._model.fit(x=self.__data[selected_clients[x]][0], y=self.__data[selected_clients[x]][1], batch_size=self._batch_size, epochs=epochs, verbose=0)
                 update = self.__calculate_update()
                 update = self._averager.parse_update(update, len(self.__data[selected_clients[x]][0]))
                 sum_updates = self._averager.sum_updates(sum_updates, update)
@@ -66,6 +70,9 @@ class MultiClient(Process):
 
     def is_client(self):
         return True
+    
+    def set_seed(self, seed):
+        random.seed(seed)
 
     def __set_weights(self, weights):
         self.__previous_weights = weights

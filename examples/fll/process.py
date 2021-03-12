@@ -57,3 +57,6 @@ class Process():
 
     def set_test_dataset(self, test_dataset_x, test_dataset_y):
         pass
+
+    def set_seed(self, seed):
+        pass

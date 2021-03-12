@@ -55,6 +55,7 @@ class Server(Process):
         self.__stop_clock(stat, "model update")
 
         self.__print_stat(stat, verbose)
+        return stat
 
     def evaluate(self, verbose):
         loss, acc = self._model.evaluate(self.__test_x, self.__test_y, verbose=verbose)
@@ -144,6 +145,9 @@ class Server(Process):
 
     def is_client(self):
         return False
+
+    def set_seed(self, seed):
+        random.seed(seed)
 
     def __federated_averaging(self, updates):
         return self._averager.calculate_average(updates, self._model, self.__multi_client)
